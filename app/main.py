@@ -5,7 +5,7 @@ import logging
 import os
 from pathlib import Path
 
-from app.models.invoice import InvoiceData
+from app.models.invoice import InvoiceData, CreditNoteData
 from app.services.xml_generator import generate_xml
 from app.services.pdf_generator import generate_pdf
 from app.services.facturx_builder import build_facturx
@@ -89,7 +89,7 @@ async def download_invoice(filename: str, api_key: str = Security(verify_api_key
 
 
 @app.post("/credit-note/generate")
-async def generate_credit_note(invoice_data, api_key: str = Security(verify_api_key)):
+async def generate_credit_note(invoice_data: CreditNoteData, api_key: str = Security(verify_api_key)):
     """Génère un avoir (TypeCode 381) annulant une facture existante."""
     from app.models.invoice import CreditNoteData
     from app.services.xml_generator import generate_credit_note_xml
