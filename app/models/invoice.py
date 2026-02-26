@@ -45,6 +45,9 @@ class CreditNoteData(BaseModel):
     buyer: Party
     lines: List[InvoiceLine] = Field(min_length=1)
     original_invoice_number: str  # Numéro de la facture annulée
+    payment_terms: Optional[str] = None
+    bank_iban: Optional[str] = None
+    due_date: Optional[str] = None
 
     @property
     def total_ht(self) -> Decimal:
