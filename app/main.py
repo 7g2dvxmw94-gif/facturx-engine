@@ -51,12 +51,17 @@ def verify_api_key(api_key: str = Security(api_key_header)):
     return api_key
 
 
+# Préfixe v1 pour tous les endpoints
+from fastapi import APIRouter
+v1 = APIRouter(prefix="/v1")
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "version": "1.0.0"}
 
 
-@app.post("/invoice/generate")
+@v1.post("/invoice/generate")
 async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:
         logger.info(f"Génération facture : {invoice_data.invoice_number}")
@@ -84,7 +89,7 @@ async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(ve
         raise HTTPException(status_code=500, detail={"error": "Erreur interne", "message": str(e)})
 
 
-@app.post("/credit-note/generate")
+@v1.post("/credit-note/generate")
 async def generate_credit_note(invoice_data: CreditNoteData, api_key: str = Security(verify_api_key)):
     try:
         logger.info(f"Génération avoir : {invoice_data.invoice_number}")
@@ -112,7 +117,7 @@ async def generate_credit_note(invoice_data: CreditNoteData, api_key: str = Secu
         raise HTTPException(status_code=500, detail={"error": "Erreur interne", "message": str(e)})
 
 
-@app.get("/invoices")
+@v1.get("/invoices")
 async def list_invoices(api_key: str = Security(verify_api_key)):
     try:
         files = sorted(STORAGE_DIR.glob("*.pdf"), reverse=True)
@@ -121,7 +126,7 @@ async def list_invoices(api_key: str = Security(verify_api_key)):
         raise HTTPException(status_code=500, detail={"error": "Erreur lecture stockage", "message": str(e)})
 
 
-@app.get("/invoices/{filename}")
+@v1.get("/invoices/{filename}")
 async def download_invoice(filename: str, api_key: str = Security(verify_api_key)):
     try:
         filepath = STORAGE_DIR / filename
@@ -134,7 +139,7 @@ async def download_invoice(filename: str, api_key: str = Security(verify_api_key
         raise HTTPException(status_code=500, detail={"error": "Erreur téléchargement", "message": str(e)})
 
 
-@app.post("/invoice/validate-xml")
+@v1.post("/invoice/validate-xml")
 async def validate_invoice_xml(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:
         xml_bytes = generate_xml(invoice_data)
@@ -144,3 +149,7 @@ async def validate_invoice_xml(invoice_data: InvoiceData, api_key: str = Securit
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": "Erreur génération XML", "message": str(e)})
+
+
+# Enregistrement du router v1
+app.include_router(v1)
