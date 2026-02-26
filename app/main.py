@@ -174,5 +174,54 @@ async def validate_invoice_xml(invoice_data: InvoiceData, api_key: str = Securit
         raise HTTPException(status_code=500, detail={"error": "Erreur génération XML", "message": str(e)})
 
 
+@v1.post("/invoice/dry-run")
+async def dry_run_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
+    """Valide une facture sans générer le PDF. Retourne les erreurs et warnings EN16931."""
+    try:
+        start = time.time()
+        warnings = []
+        errors = []
+
+        # Validation des données métier
+        if not invoice_data.bank_iban:
+            warnings.append("IBAN manquant - recommandé pour paiement virement")
+        if not invoice_data.due_date:
+            warnings.append("Date échéance manquante - recommandée EN16931")
+        if not invoice_data.payment_terms:
+            warnings.append("Conditions de paiement manquantes - recommandées")
+        for line in invoice_data.lines:
+            if line.vat_rate not in [0, 5.5, 10, 20]:
+                warnings.append(f"Taux TVA inhabituels sur ligne {line.id} : {line.vat_rate}%")
+            if line.quantity <= 0:
+                errors.append(f"Quantité invalide sur ligne {line.id} : doit être > 0")
+            if line.unit_price < 0:
+                errors.append(f"Prix unitaire négatif sur ligne {line.id}")
+
+        # Génération XML et validation XSD
+        xml_bytes = generate_xml(invoice_data)
+
+        duration = round((time.time() - start) * 1000)
+        logger.info("Dry run effectué", extra={"extra": {
+            "invoice_number": invoice_data.invoice_number,
+            "warnings": len(warnings),
+            "errors": len(errors),
+            "duration_ms": duration
+        }})
+
+        return {
+            "valid": len(errors) == 0,
+            "invoice_number": invoice_data.invoice_number,
+            "total_ht": str(invoice_data.total_ht),
+            "total_vat": str(invoice_data.total_vat),
+            "total_ttc": str(invoice_data.total_ttc),
+            "errors": errors,
+            "warnings": warnings,
+            "duration_ms": duration,
+            "xml_preview": xml_bytes.decode("utf-8")[:1000]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": "Erreur dry run", "message": str(e)})
+
+
 # Enregistrement du router v1
 app.include_router(v1)
