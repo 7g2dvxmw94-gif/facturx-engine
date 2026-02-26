@@ -12,7 +12,23 @@ from app.services.xml_generator import generate_xml, generate_credit_note_xml
 from app.services.pdf_generator import generate_pdf
 from app.services.facturx_builder import build_facturx
 
-logging.basicConfig(level=logging.INFO)
+import json
+import time
+
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        log_data = {
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "message": record.getMessage(),
+        }
+        if hasattr(record, "extra"):
+            log_data.update(record.extra)
+        return json.dumps(log_data, ensure_ascii=False)
+
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logging.basicConfig(level=logging.INFO, handlers=[handler])
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -64,7 +80,8 @@ def health_check():
 @v1.post("/invoice/generate")
 async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:
-        logger.info(f"Génération facture : {invoice_data.invoice_number}")
+        start = time.time()
+        logger.info("Génération facture", extra={"extra": {"invoice_number": invoice_data.invoice_number, "seller": invoice_data.seller.name, "buyer": invoice_data.buyer.name, "total_ttc": str(invoice_data.total_ttc)}})
 
         xml_bytes = generate_xml(invoice_data)
         pdf_bytes = generate_pdf(invoice_data)
@@ -74,7 +91,8 @@ async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(ve
         filepath = STORAGE_DIR / filename
         with open(filepath, "wb") as f:
             f.write(facturx_bytes)
-        logger.info(f"Facture sauvegardée : {filepath}")
+        duration = round((time.time() - start) * 1000)
+        logger.info("Facture générée", extra={"extra": {"invoice_number": invoice_data.invoice_number, "filename": filename, "duration_ms": duration}})
 
         return Response(
             content=facturx_bytes,
