@@ -9,7 +9,6 @@ from app.models.invoice import InvoiceData, CreditNoteData
 from app.services.xml_generator import generate_xml
 from app.services.pdf_generator import generate_pdf
 from app.services.facturx_builder import build_facturx
-from app.services.xml_validator import validate_xml
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,13 +44,6 @@ async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(ve
     logger.info(f"Génération facture : {invoice_data.invoice_number}")
 
     xml_bytes = generate_xml(invoice_data)
-    is_valid, errors = validate_xml(xml_bytes)
-    if not is_valid and "ignorée" not in str(errors):
-        raise HTTPException(
-            status_code=422,
-            detail={"message": "XML non conforme EN16931", "errors": errors}
-        )
-
     pdf_bytes = generate_pdf(invoice_data)
     facturx_bytes = build_facturx(pdf_bytes, xml_bytes)
 
@@ -97,13 +89,6 @@ async def generate_credit_note(invoice_data: CreditNoteData, api_key: str = Secu
     logger.info(f"Génération avoir : {invoice_data.invoice_number}")
 
     xml_bytes = generate_credit_note_xml(invoice_data)
-    is_valid, errors = validate_xml(xml_bytes)
-    if not is_valid and "ignorée" not in str(errors):
-        raise HTTPException(
-            status_code=422,
-            detail={"message": "XML avoir non conforme EN16931", "errors": errors}
-        )
-
     pdf_bytes = generate_pdf(invoice_data)
     facturx_bytes = build_facturx(pdf_bytes, xml_bytes)
 
