@@ -1,7 +1,8 @@
-# app/main.py
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.responses import Response
+from fastapi.security import APIKeyHeader
 import logging
+import os
 
 from app.models.invoice import InvoiceData
 from app.services.xml_generator import generate_xml
@@ -18,6 +19,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Clé API lue depuis variable d environnement
+API_KEY = os.getenv("API_KEY", "dev-secret-key")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Clé API invalide")
+    return api_key
+
 
 @app.get("/health")
 def health_check():
@@ -25,17 +36,12 @@ def health_check():
 
 
 @app.post("/invoice/generate")
-async def generate_invoice(invoice_data: InvoiceData):
-    """
-    Reçoit un JSON facture et retourne un fichier Factur-X (PDF/A-3).
-    """
+async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     logger.info(f"Génération facture : {invoice_data.invoice_number}")
 
-    # Étape 1 : Génération XML
     xml_bytes = generate_xml(invoice_data)
     logger.info("XML généré")
 
-    # Étape 2 : Validation XSD
     is_valid, errors = validate_xml(xml_bytes)
     if not is_valid and "ignorée" not in str(errors):
         raise HTTPException(
@@ -43,11 +49,9 @@ async def generate_invoice(invoice_data: InvoiceData):
             detail={"message": "XML non conforme EN16931", "errors": errors}
         )
 
-    # Étape 3 : Génération PDF
     pdf_bytes = generate_pdf(invoice_data)
     logger.info("PDF généré")
 
-    # Étape 4 : Construction Factur-X final
     facturx_bytes = build_facturx(pdf_bytes, xml_bytes)
     logger.info("Factur-X construit")
 
@@ -60,8 +64,7 @@ async def generate_invoice(invoice_data: InvoiceData):
 
 
 @app.post("/invoice/validate-xml")
-async def validate_invoice_xml(invoice_data: InvoiceData):
-    """Génère et valide le XML sans produire le PDF."""
+async def validate_invoice_xml(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     xml_bytes = generate_xml(invoice_data)
     is_valid, errors = validate_xml(xml_bytes)
     return {
