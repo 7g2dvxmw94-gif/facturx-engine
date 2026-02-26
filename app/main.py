@@ -22,13 +22,18 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "message": record.getMessage(),
         }
-        if hasattr(record, "extra"):
+        if hasattr(record, "extra") and isinstance(record.extra, dict):
             log_data.update(record.extra)
         return json.dumps(log_data, ensure_ascii=False)
 
+# Supprime les handlers existants et applique le notre
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+for h in root_logger.handlers[:]:
+    root_logger.removeHandler(h)
 handler = logging.StreamHandler()
 handler.setFormatter(JSONFormatter())
-logging.basicConfig(level=logging.INFO, handlers=[handler])
+root_logger.addHandler(handler)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
