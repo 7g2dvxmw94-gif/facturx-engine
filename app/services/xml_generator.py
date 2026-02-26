@@ -63,6 +63,17 @@ def generate_xml(invoice: InvoiceData) -> bytes:
 
     return etree.tostring(root, xml_declaration=True, encoding="UTF-8", pretty_print=True)
 
+def generate_credit_note_xml(invoice) -> bytes:
+    """Génère un XML avoir (TypeCode 381) basé sur generate_xml."""
+    from app.models.invoice import InvoiceData
+    # On réutilise generate_xml mais on change le TypeCode
+    xml_bytes = generate_xml(invoice)
+    # Remplace TypeCode 380 par 381
+    xml_str = xml_bytes.decode("UTF-8")
+    xml_str = xml_str.replace("<ram:TypeCode>380</ram:TypeCode>", "<ram:TypeCode>381</ram:TypeCode>")
+    return xml_str.encode("UTF-8")
+
+
 def _build_party(parent, tag, party):
     p = _e(parent, tag)
     _e(p, "Name", party.name)

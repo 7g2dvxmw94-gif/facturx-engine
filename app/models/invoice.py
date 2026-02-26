@@ -36,6 +36,29 @@ class InvoiceLine(BaseModel):
         return self.line_total * self.vat_rate / 100
 
 
+class CreditNoteData(BaseModel):
+    """Structure d un avoir - identique a une facture mais avec reference a la facture originale."""
+    invoice_number: str
+    issue_date: str
+    currency: str = "EUR"
+    seller: Party
+    buyer: Party
+    lines: List[InvoiceLine] = Field(min_length=1)
+    original_invoice_number: str  # Numéro de la facture annulée
+
+    @property
+    def total_ht(self) -> Decimal:
+        return sum(line.line_total for line in self.lines)
+
+    @property
+    def total_vat(self) -> Decimal:
+        return sum(line.vat_amount for line in self.lines)
+
+    @property
+    def total_ttc(self) -> Decimal:
+        return self.total_ht + self.total_vat
+
+
 class InvoiceData(BaseModel):
     invoice_number: str
     issue_date: str

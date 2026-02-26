@@ -88,6 +88,38 @@ async def download_invoice(filename: str, api_key: str = Security(verify_api_key
     return FileResponse(filepath, media_type="application/pdf", filename=filename)
 
 
+@app.post("/credit-note/generate")
+async def generate_credit_note(invoice_data, api_key: str = Security(verify_api_key)):
+    """Génère un avoir (TypeCode 381) annulant une facture existante."""
+    from app.models.invoice import CreditNoteData
+    from app.services.xml_generator import generate_credit_note_xml
+
+    logger.info(f"Génération avoir : {invoice_data.invoice_number}")
+
+    xml_bytes = generate_credit_note_xml(invoice_data)
+    is_valid, errors = validate_xml(xml_bytes)
+    if not is_valid and "ignorée" not in str(errors):
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "XML avoir non conforme EN16931", "errors": errors}
+        )
+
+    pdf_bytes = generate_pdf(invoice_data)
+    facturx_bytes = build_facturx(pdf_bytes, xml_bytes)
+
+    filename = f"avoir_{invoice_data.invoice_number}.pdf"
+    filepath = STORAGE_DIR / filename
+    with open(filepath, "wb") as f:
+        f.write(facturx_bytes)
+    logger.info(f"Avoir sauvegardé : {filepath}")
+
+    return Response(
+        content=facturx_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
 @app.post("/invoice/validate-xml")
 async def validate_invoice_xml(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     xml_bytes = generate_xml(invoice_data)
