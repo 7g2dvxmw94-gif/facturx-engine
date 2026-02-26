@@ -1,2 +1,5 @@
 [phases.setup]
-nixPkgs = ["libxml2", "libxslt", "gcc"]
+nixPkgs = ["libxml2", "libxslt", "gcc", "python311"]
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.11"
