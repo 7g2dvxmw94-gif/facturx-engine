@@ -105,6 +105,13 @@ def dashboard():
     return HTMLResponse(content=html)
 
 
+@app.get("/form", response_class=HTMLResponse)
+def form():
+    """Formulaire de création de facture."""
+    html = FilePath("app/templates/form.html").read_text()
+    return HTMLResponse(content=html)
+
+
 @v1.post("/invoice/generate")
 async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:
