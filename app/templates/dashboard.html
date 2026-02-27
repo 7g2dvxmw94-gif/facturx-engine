@@ -42,9 +42,9 @@
 </div>
 
 <div id="dashboard" style="display:none">
-    <header>
+    <header style="display:flex; justify-content:space-between; align-items:center;">
         <h1>📄 Factur-X Dashboard</h1>
-        <a href="/form" style="background:#27ae60; color:white; padding:10px 20px; border-radius:4px; text-decoration:none; font-size:14px;">+ Nouvelle facture</a>
+        <a href="/form" style="background:#27ae60; color:white; padding:10px 20px; border-radius:4px; text-decoration:none; font-size:14px; white-space:nowrap;">+ Nouvelle facture</a>
     </header>
     <div class="container">
         <div class="stats">
@@ -88,6 +88,7 @@ async function login() {
             document.getElementById('login-error').textContent = 'Clé API invalide';
             return;
         }
+        sessionStorage.setItem('apiKey', apiKey);
         const data = await res.json();
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
@@ -96,6 +97,24 @@ async function login() {
         document.getElementById('login-error').textContent = 'Erreur de connexion';
     }
 }
+
+// Connexion automatique si clé déjà en session
+window.addEventListener('load', async () => {
+    const savedKey = sessionStorage.getItem('apiKey');
+    if (savedKey) {
+        document.getElementById('api-key-input').value = savedKey;
+        apiKey = savedKey;
+        try {
+            const res = await fetch(BASE_URL + '/v1/invoices', { headers: { 'X-API-Key': apiKey } });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                renderDashboard(data);
+            }
+        } catch(e) {}
+    }
+});
 
 function renderDashboard(data) {
     const invoices = data.invoices || [];
