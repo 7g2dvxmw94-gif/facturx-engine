@@ -197,6 +197,36 @@ async def validate_invoice_xml(invoice_data: InvoiceData, api_key: str = Securit
         raise HTTPException(status_code=500, detail={"error": "Erreur génération XML", "message": str(e)})
 
 
+import re
+from datetime import datetime
+
+TAUX_TVA_VALIDES = [0, 2.1, 5.5, 8.5, 10, 20]
+UNITES_VALIDES = ["HUR", "EA", "DAY", "MTR", "KGM", "LTR", "MTK", "C62", "SET", "MON"]
+DEVISES_VALIDES = ["EUR", "USD", "GBP", "CHF", "JPY"]
+PAYS_VALIDES = ["FR", "DE", "ES", "IT", "BE", "NL", "PT", "LU", "AT", "GB", "CH", "US"]
+
+
+def _valider_siret(siret: str) -> bool:
+    return bool(re.match(r"^\d{14}$", siret))
+
+
+def _valider_tva_fr(tva: str) -> bool:
+    return bool(re.match(r"^FR\d{2}\d{9}$", tva))
+
+
+def _valider_iban_fr(iban: str) -> bool:
+    iban = iban.replace(" ", "")
+    return bool(re.match(r"^FR\d{25}$", iban))
+
+
+def _valider_date(date_str: str) -> bool:
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+
 @v1.post("/invoice/dry-run")
 async def dry_run_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     """Valide une facture sans générer le PDF. Retourne les erreurs et warnings EN16931."""
@@ -205,20 +235,68 @@ async def dry_run_invoice(invoice_data: InvoiceData, api_key: str = Security(ver
         warnings = []
         errors = []
 
-        # Validation des données métier
-        if not invoice_data.bank_iban:
+        # Validation SIRET
+        if not _valider_siret(invoice_data.seller.siret):
+            errors.append(f"SIRET vendeur invalide : doit contenir exactement 14 chiffres")
+        if not _valider_siret(invoice_data.buyer.siret):
+            errors.append(f"SIRET acheteur invalide : doit contenir exactement 14 chiffres")
+
+        # Validation TVA
+        if not _valider_tva_fr(invoice_data.seller.vat_number):
+            errors.append(f"Numéro TVA vendeur invalide : format attendu FR + 11 chiffres")
+        if not _valider_tva_fr(invoice_data.buyer.vat_number):
+            errors.append(f"Numéro TVA acheteur invalide : format attendu FR + 11 chiffres")
+
+        # Validation IBAN
+        if invoice_data.bank_iban:
+            if not _valider_iban_fr(invoice_data.bank_iban):
+                errors.append(f"IBAN invalide : format attendu FR + 25 caractères")
+        else:
             warnings.append("IBAN manquant - recommandé pour paiement virement")
-        if not invoice_data.due_date:
+
+        # Validation dates
+        if not _valider_date(invoice_data.issue_date):
+            errors.append(f"Date émission invalide : format attendu YYYY-MM-DD")
+        if invoice_data.due_date:
+            if not _valider_date(invoice_data.due_date):
+                errors.append(f"Date échéance invalide : format attendu YYYY-MM-DD")
+            elif invoice_data.due_date < invoice_data.issue_date:
+                errors.append(f"Date échéance antérieure à la date émission")
+        else:
             warnings.append("Date échéance manquante - recommandée EN16931")
+
+        # Validation conditions paiement
         if not invoice_data.payment_terms:
             warnings.append("Conditions de paiement manquantes - recommandées")
+
+        # Validation devise
+        if invoice_data.currency not in DEVISES_VALIDES:
+            errors.append(f"Devise invalide : {invoice_data.currency}. Valeurs acceptées : {DEVISES_VALIDES}")
+
+        # Validation pays
+        if invoice_data.seller.address.country not in PAYS_VALIDES:
+            warnings.append(f"Code pays vendeur inhabituel : {invoice_data.seller.address.country}")
+        if invoice_data.buyer.address.country not in PAYS_VALIDES:
+            warnings.append(f"Code pays acheteur inhabituel : {invoice_data.buyer.address.country}")
+
+        # Validation code postal France
+        if invoice_data.seller.address.country == "FR":
+            if not re.match(r"^\d{5}$", invoice_data.seller.address.postal_code):
+                errors.append(f"Code postal vendeur invalide : doit contenir 5 chiffres")
+        if invoice_data.buyer.address.country == "FR":
+            if not re.match(r"^\d{5}$", invoice_data.buyer.address.postal_code):
+                errors.append(f"Code postal acheteur invalide : doit contenir 5 chiffres")
+
+        # Validation lignes
         for line in invoice_data.lines:
-            if line.vat_rate not in [0, 5.5, 10, 20]:
-                warnings.append(f"Taux TVA inhabituels sur ligne {line.id} : {line.vat_rate}%")
             if line.quantity <= 0:
-                errors.append(f"Quantité invalide sur ligne {line.id} : doit être > 0")
+                errors.append(f"Ligne {line.id} : quantité doit être > 0")
             if line.unit_price < 0:
-                errors.append(f"Prix unitaire négatif sur ligne {line.id}")
+                errors.append(f"Ligne {line.id} : prix unitaire ne peut pas être négatif")
+            if line.vat_rate not in TAUX_TVA_VALIDES:
+                warnings.append(f"Ligne {line.id} : taux TVA {line.vat_rate}% inhabituel en France")
+            if line.unit not in UNITES_VALIDES:
+                warnings.append(f"Ligne {line.id} : unité {line.unit} non standard UN/ECE")
 
         # Génération XML et validation XSD
         xml_bytes = generate_xml(invoice_data)
