@@ -160,6 +160,63 @@ const BASE_URL = window.location.origin;
 
 // Dates gérées dans window.addEventListener load
 
+function prefillFromXml(xml) {
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xml, "text/xml");
+        const ns = {
+            ram: "urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"
+        };
+        const get = (tag) => {
+            const el = doc.getElementsByTagNameNS(ns.ram, tag)[0];
+            return el ? el.textContent : "";
+        };
+
+        // Infos facture
+        document.getElementById("invoice_number").value = "COPIE-" + get("ID");
+        document.getElementById("payment_terms").value = "";
+
+        // Vendeur
+        const parties = doc.getElementsByTagNameNS(ns.ram, "SellerTradeParty");
+        if (parties[0]) {
+            document.getElementById("seller_name").value = parties[0].getElementsByTagNameNS(ns.ram, "Name")[0]?.textContent || "";
+            document.getElementById("seller_siret").value = parties[0].getElementsByTagNameNS(ns.ram, "ID")[0]?.textContent || "";
+            document.getElementById("seller_vat").value = parties[0].getElementsByTagNameNS(ns.ram, "ID")[1]?.textContent || "";
+            document.getElementById("seller_street").value = parties[0].getElementsByTagNameNS(ns.ram, "LineOne")[0]?.textContent || "";
+            document.getElementById("seller_city").value = parties[0].getElementsByTagNameNS(ns.ram, "CityName")[0]?.textContent || "";
+            document.getElementById("seller_postal").value = parties[0].getElementsByTagNameNS(ns.ram, "PostcodeCode")[0]?.textContent || "";
+        }
+
+        // Acheteur
+        const buyers = doc.getElementsByTagNameNS(ns.ram, "BuyerTradeParty");
+        if (buyers[0]) {
+            document.getElementById("buyer_name").value = buyers[0].getElementsByTagNameNS(ns.ram, "Name")[0]?.textContent || "";
+            document.getElementById("buyer_siret").value = buyers[0].getElementsByTagNameNS(ns.ram, "ID")[0]?.textContent || "";
+            document.getElementById("buyer_vat").value = buyers[0].getElementsByTagNameNS(ns.ram, "ID")[1]?.textContent || "";
+            document.getElementById("buyer_street").value = buyers[0].getElementsByTagNameNS(ns.ram, "LineOne")[0]?.textContent || "";
+            document.getElementById("buyer_city").value = buyers[0].getElementsByTagNameNS(ns.ram, "CityName")[0]?.textContent || "";
+            document.getElementById("buyer_postal").value = buyers[0].getElementsByTagNameNS(ns.ram, "PostcodeCode")[0]?.textContent || "";
+        }
+
+        // Lignes
+        const lineItems = doc.getElementsByTagNameNS(ns.ram, "IncludedSupplyChainTradeLineItem");
+        document.getElementById("lines-tbody").innerHTML = "";
+        lineCount = 0;
+        for (let i = 0; i < lineItems.length; i++) {
+            addLine();
+            const item = lineItems[i];
+            document.getElementById("desc-" + lineCount).value = item.getElementsByTagNameNS(ns.ram, "Name")[0]?.textContent || "";
+            document.getElementById("qty-" + lineCount).value = item.getElementsByTagNameNS(ns.ram, "BilledQuantity")[0]?.textContent || "1";
+            document.getElementById("price-" + lineCount).value = item.getElementsByTagNameNS(ns.ram, "ChargeAmount")[1]?.textContent || "0";
+            const vatRate = item.getElementsByTagNameNS(ns.ram, "RateApplicablePercent")[0]?.textContent || "20";
+            document.getElementById("vat-" + lineCount).value = vatRate;
+        }
+        calcTotals();
+    } catch(e) {
+        console.error("Erreur parsing XML:", e);
+    }
+}
+
 async function login() {
     apiKey = document.getElementById('api-key-input').value;
     try {
@@ -195,6 +252,11 @@ window.addEventListener('load', async () => {
             if (res.ok) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
+                const duplicateXml = sessionStorage.getItem('duplicateXml');
+                if (duplicateXml) {
+                    prefillFromXml(duplicateXml);
+                    sessionStorage.removeItem('duplicateXml');
+                }
             }
         } catch(e) {}
     }

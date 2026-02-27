@@ -133,8 +133,13 @@ function renderDashboard(data) {
         row.innerHTML = `
             <td><span class="badge ${isAvoir ? 'badge-avoir' : 'badge-facture'}">${isAvoir ? 'Avoir' : 'Facture'}</span></td>
             <td>${filename}</td>
-            <td><a class="btn-download" href="${BASE_URL}/v1/invoices/${filename}" 
-                onclick="event.preventDefault(); downloadFile('${filename}')">⬇ Télécharger</a></td>
+            <td>
+                <a class="btn-download" href="${BASE_URL}/v1/invoices/${filename}" 
+                onclick="event.preventDefault(); downloadFile('${filename}')">⬇ Télécharger</a>
+                &nbsp;
+                <a class="btn-download" style="background:#e67e22" href="#"
+                onclick="event.preventDefault(); duplicateInvoice('${filename}')">📋 Dupliquer</a>
+            </td>
         `;
         tbody.appendChild(row);
     });
@@ -150,6 +155,23 @@ async function downloadFile(filename) {
     a.href = url;
     a.download = filename;
     a.click();
+}
+
+async function duplicateInvoice(filename) {
+    try {
+        const res = await fetch(BASE_URL + '/v1/invoices/' + filename + '/data', {
+            headers: { 'X-API-Key': apiKey }
+        });
+        if (!res.ok) {
+            alert('Erreur lors de la récupération des données');
+            return;
+        }
+        const data = await res.json();
+        sessionStorage.setItem('duplicateXml', data.xml);
+        window.location.href = '/form?duplicate=1';
+    } catch(e) {
+        alert('Erreur : ' + e.message);
+    }
 }
 
 document.getElementById('api-key-input').addEventListener('keypress', function(e) {

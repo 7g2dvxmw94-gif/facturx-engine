@@ -192,6 +192,24 @@ async def download_invoice(filename: str, api_key: str = Security(verify_api_key
         raise HTTPException(status_code=500, detail={"error": "Erreur téléchargement", "message": str(e)})
 
 
+@v1.get("/invoices/{filename}/data")
+async def get_invoice_data(filename: str, api_key: str = Security(verify_api_key)):
+    """Extrait les données XML d'une facture stockée."""
+    try:
+        filepath = STORAGE_DIR / filename
+        if not filepath.exists():
+            raise HTTPException(status_code=404, detail={"error": f"Facture {filename} non trouvée"})
+        from facturx import get_facturx_xml_from_pdf
+        with open(filepath, "rb") as f:
+            result = get_facturx_xml_from_pdf(f)
+        xml = result[1] if isinstance(result, tuple) else result
+        return {"filename": filename, "xml": xml.decode("utf-8")}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": "Erreur extraction XML", "message": str(e)})
+
+
 @v1.post("/invoice/validate-xml")
 async def validate_invoice_xml(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:
