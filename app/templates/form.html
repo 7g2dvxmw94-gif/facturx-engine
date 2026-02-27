@@ -98,7 +98,9 @@
 
         <!-- Vendeur -->
         <div class="card">
-            <h2>🏢 Vendeur</h2>
+            <h2>🏢 Vendeur 
+                <button class="btn btn-primary" style="float:right; font-size:12px; padding:6px 12px" onclick="saveSellerTemplate()">💾 Sauvegarder comme modèle</button>
+            </h2>
             <div class="grid-2">
                 <div class="field"><label>Nom *</label><input type="text" id="seller_name" placeholder="ACME SAS" /></div>
                 <div class="field"><label>SIRET *</label><input type="text" id="seller_siret" placeholder="12345678900017" maxlength="14" /></div>
@@ -256,6 +258,8 @@ window.addEventListener('load', async () => {
                 if (duplicateXml) {
                     prefillFromXml(duplicateXml);
                     sessionStorage.removeItem('duplicateXml');
+                } else {
+                    loadSellerTemplate();
                 }
             }
         } catch(e) {}
@@ -339,6 +343,37 @@ function getLines() {
     }
     return lines;
 }
+
+function saveSellerTemplate() {
+    const seller = {
+        name: document.getElementById('seller_name').value,
+        siret: document.getElementById('seller_siret').value,
+        vat: document.getElementById('seller_vat').value,
+        street: document.getElementById('seller_street').value,
+        city: document.getElementById('seller_city').value,
+        postal: document.getElementById('seller_postal').value,
+        iban: document.getElementById('bank_iban').value,
+        payment_terms: document.getElementById('payment_terms').value
+    };
+    localStorage.setItem('sellerTemplate', JSON.stringify(seller));
+    alert('✅ Modèle vendeur sauvegardé !');
+}
+
+function loadSellerTemplate() {
+    const saved = localStorage.getItem('sellerTemplate');
+    if (saved) {
+        const seller = JSON.parse(saved);
+        document.getElementById('seller_name').value = seller.name || '';
+        document.getElementById('seller_siret').value = seller.siret || '';
+        document.getElementById('seller_vat').value = seller.vat || '';
+        document.getElementById('seller_street').value = seller.street || '';
+        document.getElementById('seller_city').value = seller.city || '';
+        document.getElementById('seller_postal').value = seller.postal || '';
+        document.getElementById('bank_iban').value = seller.iban || '';
+        document.getElementById('payment_terms').value = seller.payment_terms || '';
+    }
+}
+
 
 async function generateInvoice() {
     const payload = {
