@@ -90,9 +90,19 @@ from fastapi import APIRouter
 v1 = APIRouter(prefix="/v1")
 
 
+from fastapi.responses import HTMLResponse
+from pathlib import Path as FilePath
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    """Tableau de bord des factures générées."""
+    html = FilePath("app/templates/dashboard.html").read_text()
+    return HTMLResponse(content=html)
 
 
 @v1.post("/invoice/generate")
