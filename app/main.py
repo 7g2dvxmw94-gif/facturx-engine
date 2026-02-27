@@ -63,13 +63,26 @@ async def validation_exception_handler(request, exc):
     )
 
 
-def verify_api_key(api_key: str = Security(api_key_header)):
-    if api_key != API_KEY:
-        raise HTTPException(
-            status_code=403,
-            detail={"error": "Clé API invalide ou manquante"}
-        )
-    return api_key
+import json as json_module
+
+def _load_api_keys() -> dict:
+    clients_json = os.getenv("CLIENTS", "{}")
+    try:
+        return json_module.loads(clients_json)
+    except Exception:
+        api_key = os.getenv("API_KEY", "dev-secret-key")
+        return {"default": api_key}
+
+
+def verify_api_key(api_key: str = Security(api_key_header)) -> str:
+    clients = _load_api_keys()
+    for client_name, client_key in clients.items():
+        if api_key == client_key:
+            return client_name
+    raise HTTPException(
+        status_code=403,
+        detail={"error": "Clé API invalide ou manquante"}
+    )
 
 
 # Préfixe v1 pour tous les endpoints
@@ -86,7 +99,7 @@ def health_check():
 async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:
         start = time.time()
-        logger.info("Génération facture", extra={"extra": {"invoice_number": invoice_data.invoice_number, "seller": invoice_data.seller.name, "buyer": invoice_data.buyer.name, "total_ttc": str(invoice_data.total_ttc)}})
+        logger.info("Génération facture", extra={"extra": {"client": api_key, "invoice_number": invoice_data.invoice_number, "seller": invoice_data.seller.name, "buyer": invoice_data.buyer.name, "total_ttc": str(invoice_data.total_ttc)}})
 
         xml_bytes = generate_xml(invoice_data)
         pdf_bytes = generate_pdf(invoice_data)
