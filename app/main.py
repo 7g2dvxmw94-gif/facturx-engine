@@ -119,6 +119,13 @@ def docs_client():
     return HTMLResponse(content=html)
 
 
+@app.get("/", response_class=HTMLResponse)
+def landing():
+    """Page de landing."""
+    html = FilePath("app/templates/landing.html").read_text()
+    return HTMLResponse(content=html)
+
+
 @v1.post("/invoice/generate")
 async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:

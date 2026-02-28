@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factur-X Engine — Facturation électronique EN16931</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; color: #333; }
+        
+        /* HEADER */
+        nav { background: #2c3e50; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; }
+        nav .logo { color: white; font-size: 20px; font-weight: bold; }
+        nav .links a { color: #bdc3c7; text-decoration: none; margin-left: 25px; font-size: 14px; }
+        nav .links a:hover { color: white; }
+        nav .btn-nav { background: #3498db; color: white !important; padding: 8px 18px; border-radius: 4px; }
+
+        /* HERO */
+        .hero { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; padding: 100px 40px; text-align: center; }
+        .hero h1 { font-size: 42px; margin-bottom: 20px; line-height: 1.3; }
+        .hero h1 span { color: #f1c40f; }
+        .hero p { font-size: 20px; color: #bdc3c7; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .hero-buttons { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 14px 30px; border-radius: 6px; font-size: 16px; text-decoration: none; cursor: pointer; border: none; }
+        .btn-primary { background: #f1c40f; color: #2c3e50; font-weight: bold; }
+        .btn-primary:hover { background: #f39c12; }
+        .btn-secondary { background: transparent; color: white; border: 2px solid white; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .hero-badges { margin-top: 40px; }
+        .hero-badge { display: inline-block; background: rgba(255,255,255,0.1); color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; margin: 4px; }
+
+        /* STATS */
+        .stats { background: #f8f9fa; padding: 40px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 900px; margin: 0 auto; text-align: center; }
+        .stat h3 { font-size: 36px; color: #3498db; }
+        .stat p { color: #666; font-size: 14px; }
+
+        /* FEATURES */
+        .features { padding: 80px 40px; background: white; }
+        .features h2 { text-align: center; font-size: 28px; color: #2c3e50; margin-bottom: 50px; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1000px; margin: 0 auto; }
+        .feature { padding: 25px; border-radius: 8px; border: 1px solid #eee; }
+        .feature:hover { box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .feature .icon { font-size: 36px; margin-bottom: 15px; }
+        .feature h3 { font-size: 17px; color: #2c3e50; margin-bottom: 10px; }
+        .feature p { color: #666; font-size: 14px; line-height: 1.6; }
+
+        /* HOW IT WORKS */
+        .how { background: #f8f9fa; padding: 80px 40px; }
+        .how h2 { text-align: center; font-size: 28px; color: #2c3e50; margin-bottom: 50px; }
+        .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 900px; margin: 0 auto; }
+        .step { text-align: center; padding: 20px; }
+        .step .number { width: 50px; height: 50px; background: #3498db; color: white; border-radius: 50%; font-size: 22px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; }
+        .step h3 { color: #2c3e50; margin-bottom: 10px; }
+        .step p { color: #666; font-size: 14px; }
+
+        /* PRICING */
+        .pricing { padding: 80px 40px; background: white; }
+        .pricing h2 { text-align: center; font-size: 28px; color: #2c3e50; margin-bottom: 50px; }
+        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; max-width: 900px; margin: 0 auto; }
+        .plan { border: 2px solid #eee; border-radius: 10px; padding: 30px; text-align: center; }
+        .plan.popular { border-color: #3498db; position: relative; }
+        .plan .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3498db; color: white; padding: 4px 16px; border-radius: 20px; font-size: 12px; white-space: nowrap; }
+        .plan h3 { font-size: 20px; color: #2c3e50; margin-bottom: 10px; }
+        .plan .price { font-size: 36px; font-weight: bold; color: #2c3e50; margin: 15px 0; }
+        .plan .price span { font-size: 16px; font-weight: normal; color: #999; }
+        .plan ul { list-style: none; margin: 20px 0; text-align: left; }
+        .plan ul li { padding: 6px 0; font-size: 14px; color: #555; }
+        .plan ul li::before { content: "✓ "; color: #27ae60; font-weight: bold; }
+        .plan .btn-plan { display: block; padding: 12px; border-radius: 6px; text-decoration: none; font-size: 15px; margin-top: 20px; }
+        .btn-plan-primary { background: #3498db; color: white; }
+        .btn-plan-secondary { background: #f8f9fa; color: #2c3e50; border: 1px solid #ddd; }
+
+        /* CTA */
+        .cta { background: linear-gradient(135deg, #3498db, #2c3e50); padding: 80px 40px; text-align: center; color: white; }
+        .cta h2 { font-size: 30px; margin-bottom: 15px; }
+        .cta p { color: #bdc3c7; margin-bottom: 30px; font-size: 16px; }
+
+        /* FOOTER */
+        footer { background: #2c3e50; color: #bdc3c7; padding: 30px 40px; text-align: center; font-size: 13px; }
+        footer a { color: #3498db; text-decoration: none; margin: 0 10px; }
+
+        @media (max-width: 768px) {
+            .features-grid, .steps, .pricing-grid, .stats-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="logo">⚡ Factur-X Engine</div>
+    <div class="links">
+        <a href="#features">Fonctionnalités</a>
+        <a href="#pricing">Tarifs</a>
+        <a href="/docs-client">Documentation</a>
+        <a href="/form" class="btn-nav">Essayer gratuitement</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+    <h1>La facturation électronique<br><span>EN16931 sans effort</span></h1>
+    <p>Générez des factures Factur-X conformes à la réglementation française 2026 via une API simple ou un formulaire web.</p>
+    <div class="hero-buttons">
+        <a href="/form" class="btn btn-primary">🚀 Commencer gratuitement</a>
+        <a href="/docs-client" class="btn btn-secondary">📖 Documentation</a>
+    </div>
+    <div class="hero-badges">
+        <span class="hero-badge">✓ Conforme EN16931</span>
+        <span class="hero-badge">✓ PDF/A-3b</span>
+        <span class="hero-badge">✓ Factur-X Extended</span>
+        <span class="hero-badge">✓ Obligatoire 2026</span>
+        <span class="hero-badge">✓ API REST</span>
+    </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+    <div class="stats-grid">
+        <div class="stat"><h3>&lt; 50ms</h3><p>Génération facture</p></div>
+        <div class="stat"><h3>100%</h3><p>Conforme XSD EN16931</p></div>
+        <div class="stat"><h3>99.9%</h3><p>Disponibilité API</p></div>
+        <div class="stat"><h3>2026</h3><p>Prêt pour obligation</p></div>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features" id="features">
+    <h2>Tout ce dont vous avez besoin</h2>
+    <div class="features-grid">
+        <div class="feature">
+            <div class="icon">📄</div>
+            <h3>Factures & Avoirs</h3>
+            <p>Générez des factures et avoirs Factur-X valides en quelques millisecondes via API ou formulaire web.</p>
+        </div>
+        <div class="feature">
+            <div class="icon">✅</div>
+            <h3>Validation EN16931</h3>
+            <p>Chaque facture est validée contre le XSD officiel EN16931 + règles métier françaises (SIRET, TVA, IBAN).</p>
+        </div>
+        <div class="feature">
+            <div class="icon">🔍</div>
+            <h3>Mode Dry Run</h3>
+            <p>Validez vos données avant génération. Recevez la liste des erreurs et warnings sans générer de PDF.</p>
+        </div>
+        <div class="feature">
+            <div class="icon">💾</div>
+            <h3>Stockage inclus</h3>
+            <p>Toutes vos factures sont stockées et accessibles depuis votre tableau de bord.</p>
+        </div>
+        <div class="feature">
+            <div class="icon">🔒</div>
+            <h3>Sécurisé</h3>
+            <p>Authentification par clé API. Une clé unique par client pour isoler vos données.</p>
+        </div>
+        <div class="feature">
+            <div class="icon">🔌</div>
+            <h3>Intégration facile</h3>
+            <p>API REST documentée, compatible avec tous les langages. Intégration en quelques lignes de code.</p>
+        </div>
+    </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="how">
+    <h2>Comment ça marche</h2>
+    <div class="steps">
+        <div class="step">
+            <div class="number">1</div>
+            <h3>Envoyez vos données</h3>
+            <p>Via le formulaire web ou l'API REST avec vos informations vendeur, acheteur et lignes de facturation.</p>
+        </div>
+        <div class="step">
+            <div class="number">2</div>
+            <h3>Validation automatique</h3>
+            <p>Le moteur valide vos données contre le XSD EN16931 officiel et les règles métier françaises.</p>
+        </div>
+        <div class="step">
+            <div class="number">3</div>
+            <h3>PDF/A-3b généré</h3>
+            <p>Recevez instantanément votre facture PDF avec le XML EN16931 embarqué, prête à envoyer.</p>
+        </div>
+    </div>
+</div>
+
+<!-- PRICING -->
+<div class="pricing" id="pricing">
+    <h2>Tarifs simples et transparents</h2>
+    <div class="pricing-grid">
+        <div class="plan">
+            <h3>Starter</h3>
+            <div class="price">49€ <span>/mois</span></div>
+            <ul>
+                <li>100 factures/mois</li>
+                <li>API REST</li>
+                <li>Formulaire web</li>
+                <li>Stockage 1 an</li>
+                <li>Support email</li>
+            </ul>
+            <a href="mailto:contact@facturx-engine.fr" class="btn-plan btn-plan-secondary">Démarrer</a>
+        </div>
+        <div class="plan popular">
+            <div class="popular-badge">⭐ Le plus populaire</div>
+            <h3>Business</h3>
+            <div class="price">149€ <span>/mois</span></div>
+            <ul>
+                <li>500 factures/mois</li>
+                <li>API REST + Webhooks</li>
+                <li>Formulaire web</li>
+                <li>Stockage illimité</li>
+                <li>Mode Dry Run</li>
+                <li>Support prioritaire</li>
+            </ul>
+            <a href="mailto:contact@facturx-engine.fr" class="btn-plan btn-plan-primary">Démarrer</a>
+        </div>
+        <div class="plan">
+            <h3>Enterprise</h3>
+            <div class="price">Sur devis</div>
+            <ul>
+                <li>Volume illimité</li>
+                <li>Hébergement dédié</li>
+                <li>SLA garanti</li>
+                <li>Intégration ERP</li>
+                <li>Support 24/7</li>
+                <li>Formation incluse</li>
+            </ul>
+            <a href="mailto:contact@facturx-engine.fr" class="btn-plan btn-plan-secondary">Nous contacter</a>
+        </div>
+    </div>
+</div>
+
+<!-- CTA -->
+<div class="cta">
+    <h2>Prêt pour la facturation électronique 2026 ?</h2>
+    <p>Rejoignez les entreprises qui anticipent l'obligation de facturation électronique.</p>
+    <a href="/form" class="btn btn-primary">🚀 Essayer gratuitement</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <p>
+        <a href="/form">Formulaire</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/docs-client">Documentation</a>
+        <a href="/docs">API Swagger</a>
+    </p>
+    <br>
+    <p>© 2024 Factur-X Engine — Facturation électronique EN16931</p>
+</footer>
+
+</body>
+</html>
