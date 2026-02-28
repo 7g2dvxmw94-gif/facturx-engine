@@ -61,11 +61,17 @@
                 <p>Avoirs</p>
             </div>
         </div>
+        <div style="margin-bottom:15px">
+            <input type="text" id="search-input" placeholder="🔍 Rechercher une facture..." 
+                oninput="searchInvoices()"
+                style="width:100%; padding:10px 15px; border:1px solid #ddd; border-radius:6px; font-size:14px;">
+        </div>
         <table>
             <thead>
                 <tr>
                     <th>Type</th>
                     <th>Nom du fichier</th>
+                    <th>Date</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -116,33 +122,54 @@ window.addEventListener('load', async () => {
     }
 });
 
+let allInvoices = [];
+
 function renderDashboard(data) {
-    const invoices = data.invoices || [];
-    const factures = invoices.filter(f => f.startsWith('facture_'));
-    const avoirs = invoices.filter(f => f.startsWith('avoir_'));
+    allInvoices = data.invoices || [];
+    const factures = allInvoices.filter(f => f.filename.startsWith('facture_'));
+    const avoirs = allInvoices.filter(f => f.filename.startsWith('avoir_'));
 
     document.getElementById('total-count').textContent = data.count;
     document.getElementById('facture-count').textContent = factures.length;
     document.getElementById('avoir-count').textContent = avoirs.length;
 
+    renderTable(allInvoices);
+}
+
+function renderTable(invoices) {
     const tbody = document.getElementById('invoices-table');
     tbody.innerHTML = '';
-    invoices.forEach(filename => {
+    if (invoices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999; padding:30px">Aucune facture trouvée</td></tr>';
+        return;
+    }
+    invoices.forEach(inv => {
+        const filename = inv.filename;
         const isAvoir = filename.startsWith('avoir_');
+        const date = new Date(inv.date * 1000).toLocaleDateString('fr-FR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+        const size = (inv.size / 1024).toFixed(1) + ' KB';
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><span class="badge ${isAvoir ? 'badge-avoir' : 'badge-facture'}">${isAvoir ? 'Avoir' : 'Facture'}</span></td>
             <td>${filename}</td>
+            <td style="color:#999; font-size:13px">${date} — ${size}</td>
             <td>
-                <a class="btn-download" href="${BASE_URL}/v1/invoices/${filename}" 
-                onclick="event.preventDefault(); downloadFile('${filename}')">⬇ Télécharger</a>
+                <a class="btn-download" href="#" onclick="event.preventDefault(); downloadFile('${filename}')">⬇ Télécharger</a>
                 &nbsp;
-                <a class="btn-download" style="background:#e67e22" href="#"
-                onclick="event.preventDefault(); duplicateInvoice('${filename}')">📋 Dupliquer</a>
+                <a class="btn-download" style="background:#e67e22" href="#" onclick="event.preventDefault(); duplicateInvoice('${filename}')">📋 Dupliquer</a>
             </td>
         `;
         tbody.appendChild(row);
     });
+}
+
+function searchInvoices() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const filtered = allInvoices.filter(inv => inv.filename.toLowerCase().includes(query));
+    renderTable(filtered);
 }
 
 async function downloadFile(filename) {

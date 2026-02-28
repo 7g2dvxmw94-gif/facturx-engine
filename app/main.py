@@ -187,8 +187,15 @@ async def generate_credit_note(invoice_data: CreditNoteData, api_key: str = Secu
 @v1.get("/invoices")
 async def list_invoices(api_key: str = Security(verify_api_key)):
     try:
-        files = sorted(STORAGE_DIR.glob("*.pdf"), reverse=True)
-        return {"count": len(files), "invoices": [f.name for f in files]}
+        files = sorted(STORAGE_DIR.glob("*.pdf"), key=lambda f: f.stat().st_mtime, reverse=True)
+        invoices = []
+        for f in files:
+            invoices.append({
+                "filename": f.name,
+                "date": f.stat().st_mtime,
+                "size": f.stat().st_size
+            })
+        return {"count": len(invoices), "invoices": invoices}
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": "Erreur lecture stockage", "message": str(e)})
 
