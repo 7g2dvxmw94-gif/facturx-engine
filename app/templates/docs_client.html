@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Factur-X Engine</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f8f9fa; color: #333; }
+        header { background: #2c3e50; color: white; padding: 40px; text-align: center; }
+        header h1 { font-size: 32px; margin-bottom: 10px; }
+        header p { color: #bdc3c7; font-size: 16px; }
+        .badges { margin-top: 20px; }
+        .badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; margin: 4px; }
+        .badge-green { background: #27ae60; color: white; }
+        .badge-blue { background: #3498db; color: white; }
+        .badge-orange { background: #e67e22; color: white; }
+        nav { background: #34495e; padding: 0 40px; display: flex; gap: 30px; }
+        nav a { color: #bdc3c7; text-decoration: none; padding: 15px 0; font-size: 14px; border-bottom: 3px solid transparent; }
+        nav a:hover { color: white; border-bottom-color: #3498db; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .section { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 25px; }
+        .section h2 { font-size: 20px; color: #2c3e50; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #3498db; }
+        .section h3 { font-size: 16px; color: #2c3e50; margin: 20px 0 10px; }
+        .section p { color: #555; line-height: 1.7; margin-bottom: 10px; }
+        .endpoint { background: #f8f9fa; border-left: 4px solid #3498db; padding: 15px 20px; margin: 15px 0; border-radius: 0 4px 4px 0; }
+        .endpoint .method { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 10px; }
+        .method-post { background: #27ae60; color: white; }
+        .method-get { background: #3498db; color: white; }
+        .endpoint .url { font-family: monospace; font-size: 15px; color: #2c3e50; }
+        .endpoint .desc { color: #666; font-size: 14px; margin-top: 5px; }
+        code { background: #2c3e50; color: #ecf0f1; padding: 15px 20px; border-radius: 6px; display: block; font-family: monospace; font-size: 13px; overflow-x: auto; white-space: pre; margin: 15px 0; line-height: 1.6; }
+        .inline-code { background: #ecf0f1; color: #c0392b; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #2c3e50; color: white; padding: 12px; text-align: left; font-size: 14px; }
+        td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        tr:hover { background: #f9f9f9; }
+        .check { color: #27ae60; font-weight: bold; }
+        .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+        .feature { background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 3px solid #27ae60; }
+        .feature h4 { color: #2c3e50; margin-bottom: 5px; }
+        .feature p { font-size: 13px; color: #666; margin: 0; }
+        .alert { padding: 15px 20px; border-radius: 6px; margin: 15px 0; }
+        .alert-info { background: #d6eaf8; border-left: 4px solid #3498db; color: #1a5276; }
+        .alert-success { background: #d5f5e3; border-left: 4px solid #27ae60; color: #1e8449; }
+        footer { text-align: center; padding: 30px; color: #999; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>⚡ Factur-X Engine</h1>
+    <p>API de génération de factures électroniques conformes EN16931</p>
+    <div class="badges">
+        <span class="badge badge-green">✓ Conforme EN16931</span>
+        <span class="badge badge-blue">✓ PDF/A-3b</span>
+        <span class="badge badge-orange">✓ Factur-X Extended</span>
+        <span class="badge badge-green">✓ Prêt 2026</span>
+    </div>
+</header>
+
+<nav>
+    <a href="#introduction">Introduction</a>
+    <a href="#authentification">Authentification</a>
+    <a href="#endpoints">Endpoints</a>
+    <a href="#exemples">Exemples</a>
+    <a href="#codes-erreur">Codes erreur</a>
+    <a href="#conformite">Conformité</a>
+</nav>
+
+<div class="container">
+
+    <!-- Introduction -->
+    <div class="section" id="introduction">
+        <h2>🎯 Introduction</h2>
+        <p>Factur-X Engine est une API REST qui génère des factures électroniques au format <strong>Factur-X profil EN16931</strong>, conformes à la réglementation française de facturation électronique obligatoire à partir de 2026.</p>
+        <p>Chaque facture générée est un fichier <strong>PDF/A-3b</strong> avec le XML EN16931 embarqué, validé contre le schéma XSD officiel.</p>
+
+        <div class="feature-grid">
+            <div class="feature">
+                <h4>📄 Génération factures</h4>
+                <p>Factures et avoirs Factur-X valides en quelques millisecondes</p>
+            </div>
+            <div class="feature">
+                <h4>✅ Validation EN16931</h4>
+                <p>Validation XSD officielle + règles métier françaises</p>
+            </div>
+            <div class="feature">
+                <h4>🔍 Mode Dry Run</h4>
+                <p>Validez vos données avant génération, avec erreurs et warnings</p>
+            </div>
+            <div class="feature">
+                <h4>💾 Stockage</h4>
+                <p>Toutes vos factures stockées et téléchargeables à tout moment</p>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>URL de base :</strong> <span class="inline-code">https://web-production-581f0.up.railway.app</span>
+        </div>
+    </div>
+
+    <!-- Authentification -->
+    <div class="section" id="authentification">
+        <h2>🔐 Authentification</h2>
+        <p>Toutes les requêtes (sauf <span class="inline-code">/health</span>) nécessitent une clé API dans le header HTTP.</p>
+
+        <h3>Header requis</h3>
+        <code>X-API-Key: votre-cle-api</code>
+
+        <h3>Exemple avec curl</h3>
+        <code>curl -X POST https://web-production-581f0.up.railway.app/v1/invoice/generate \
+  -H "X-API-Key: votre-cle-api" \
+  -H "Content-Type: application/json" \
+  -d @facture.json \
+  --output facture.pdf</code>
+
+        <div class="alert alert-success">
+            Votre clé API vous est fournie par Factur-X Engine. Contactez-nous pour obtenir votre accès.
+        </div>
+    </div>
+
+    <!-- Endpoints -->
+    <div class="section" id="endpoints">
+        <h2>🛣️ Endpoints</h2>
+
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="url">/health</span>
+            <div class="desc">Vérifie que l'API est opérationnelle. Pas d'authentification requise.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method method-post">POST</span>
+            <span class="url">/v1/invoice/generate</span>
+            <div class="desc">Génère une facture Factur-X EN16931. Retourne un fichier PDF.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method method-post">POST</span>
+            <span class="url">/v1/credit-note/generate</span>
+            <div class="desc">Génère un avoir (TypeCode 381). Retourne un fichier PDF.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method method-post">POST</span>
+            <span class="url">/v1/invoice/dry-run</span>
+            <div class="desc">Valide une facture sans générer le PDF. Retourne erreurs et warnings EN16931.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="url">/v1/invoices</span>
+            <div class="desc">Liste toutes vos factures stockées.</div>
+        </div>
+
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="url">/v1/invoices/{filename}</span>
+            <div class="desc">Télécharge une facture stockée.</div>
+        </div>
+    </div>
+
+    <!-- Exemples -->
+    <div class="section" id="exemples">
+        <h2>💡 Exemples</h2>
+
+        <h3>Générer une facture</h3>
+        <code>{
+  "invoice_number": "FA-2024-001",
+  "issue_date": "2024-06-01",
+  "due_date": "2024-07-01",
+  "currency": "EUR",
+  "seller": {
+    "name": "ACME SAS",
+    "siret": "12345678900017",
+    "vat_number": "FR12345678900",
+    "address": {
+      "street": "12 rue de la Paix",
+      "city": "Paris",
+      "postal_code": "75001",
+      "country": "FR"
+    }
+  },
+  "buyer": {
+    "name": "CLIENT SARL",
+    "siret": "98765432100012",
+    "vat_number": "FR98765432100",
+    "address": {
+      "street": "5 avenue Victor Hugo",
+      "city": "Lyon",
+      "postal_code": "69001",
+      "country": "FR"
+    }
+  },
+  "lines": [
+    {
+      "id": "1",
+      "description": "Développement logiciel",
+      "quantity": 10,
+      "unit": "HUR",
+      "unit_price": 150.00,
+      "vat_rate": 20.0
+    }
+  ],
+  "payment_terms": "Virement 30 jours",
+  "bank_iban": "FR7630006000011234567890189"
+}</code>
+
+        <h3>Unités disponibles</h3>
+        <table>
+            <tr><th>Code</th><th>Description</th></tr>
+            <tr><td>EA</td><td>Pièce / Unité</td></tr>
+            <tr><td>HUR</td><td>Heure</td></tr>
+            <tr><td>DAY</td><td>Jour</td></tr>
+            <tr><td>MTR</td><td>Mètre</td></tr>
+            <tr><td>KGM</td><td>Kilogramme</td></tr>
+            <tr><td>LTR</td><td>Litre</td></tr>
+        </table>
+
+        <h3>Taux TVA français valides</h3>
+        <table>
+            <tr><th>Taux</th><th>Usage</th></tr>
+            <tr><td>20%</td><td>Taux normal</td></tr>
+            <tr><td>10%</td><td>Taux intermédiaire</td></tr>
+            <tr><td>5.5%</td><td>Taux réduit</td></tr>
+            <tr><td>2.1%</td><td>Taux super réduit</td></tr>
+            <tr><td>0%</td><td>Exonéré</td></tr>
+        </table>
+    </div>
+
+    <!-- Codes erreur -->
+    <div class="section" id="codes-erreur">
+        <h2>⚠️ Codes erreur</h2>
+        <table>
+            <tr><th>Code</th><th>Signification</th></tr>
+            <tr><td>200</td><td>Succès</td></tr>
+            <tr><td>400</td><td>Données métier invalides</td></tr>
+            <tr><td>403</td><td>Clé API invalide ou manquante</td></tr>
+            <tr><td>404</td><td>Facture non trouvée</td></tr>
+            <tr><td>422</td><td>Format JSON invalide</td></tr>
+            <tr><td>500</td><td>Erreur interne serveur</td></tr>
+        </table>
+    </div>
+
+    <!-- Conformité -->
+    <div class="section" id="conformite">
+        <h2>✅ Conformité EN16931</h2>
+        <p>Factur-X Engine garantit la conformité de chaque facture générée :</p>
+        <table>
+            <tr><th>Vérification</th><th>Status</th></tr>
+            <tr><td>Validation XSD officielle EN16931</td><td class="check">✓ Automatique</td></tr>
+            <tr><td>Profil Factur-X Extended</td><td class="check">✓ Automatique</td></tr>
+            <tr><td>PDF/A-3b avec XML embarqué</td><td class="check">✓ Automatique</td></tr>
+            <tr><td>SIRET 14 chiffres</td><td class="check">✓ Validé</td></tr>
+            <tr><td>Numéro TVA format FR</td><td class="check">✓ Validé</td></tr>
+            <tr><td>IBAN format FR</td><td class="check">✓ Validé</td></tr>
+            <tr><td>Taux TVA français valides</td><td class="check">✓ Validé</td></tr>
+            <tr><td>Cohérence des dates</td><td class="check">✓ Validé</td></tr>
+            <tr><td>Arrondis comptables ROUND_HALF_UP</td><td class="check">✓ Automatique</td></tr>
+        </table>
+    </div>
+
+</div>
+
+<footer>
+    <p>Factur-X Engine v1.0 — API de facturation électronique EN16931</p>
+</footer>
+
+</body>
+</html>

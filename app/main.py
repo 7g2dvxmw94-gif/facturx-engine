@@ -112,6 +112,13 @@ def form():
     return HTMLResponse(content=html)
 
 
+@app.get("/docs-client", response_class=HTMLResponse)
+def docs_client():
+    """Documentation client professionnelle."""
+    html = FilePath("app/templates/docs_client.html").read_text()
+    return HTMLResponse(content=html)
+
+
 @v1.post("/invoice/generate")
 async def generate_invoice(invoice_data: InvoiceData, api_key: str = Security(verify_api_key)):
     try:
