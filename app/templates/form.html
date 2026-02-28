@@ -359,7 +359,7 @@ function validateForm() {
 
     // Date émission
     if (!document.getElementById('issue_date').value) {
-        setFieldError('issue_date', 'Date d'émission obligatoire');
+        setFieldError('issue_date', 'Date d\'émission obligatoire');
         valid = false;
     }
 
@@ -367,7 +367,7 @@ function validateForm() {
     const issueDate = document.getElementById('issue_date').value;
     const dueDate = document.getElementById('due_date').value;
     if (dueDate && dueDate < issueDate) {
-        setFieldError('due_date', 'Date échéance antérieure à la date d'émission');
+        setFieldError('due_date', 'Date échéance antérieure à la date d\'émission');
         valid = false;
     }
 
