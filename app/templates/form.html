@@ -327,6 +327,138 @@ function showAlert(message, type) {
     window.scrollTo(0, 0);
 }
 
+function setFieldError(id, message) {
+    const field = document.getElementById(id);
+    if (!field) return;
+    field.style.borderColor = message ? '#e74c3c' : '#ddd';
+    let errEl = document.getElementById('err-' + id);
+    if (!errEl) {
+        errEl = document.createElement('small');
+        errEl.id = 'err-' + id;
+        errEl.style.color = '#e74c3c';
+        errEl.style.fontSize = '12px';
+        field.parentNode.appendChild(errEl);
+    }
+    errEl.textContent = message || '';
+}
+
+function clearErrors() {
+    document.querySelectorAll('input, select').forEach(el => el.style.borderColor = '#ddd');
+    document.querySelectorAll('small[id^="err-"]').forEach(el => el.textContent = '');
+}
+
+function validateForm() {
+    clearErrors();
+    let valid = true;
+
+    // Numéro facture
+    if (!document.getElementById('invoice_number').value.trim()) {
+        setFieldError('invoice_number', 'Numéro de facture obligatoire');
+        valid = false;
+    }
+
+    // Date émission
+    if (!document.getElementById('issue_date').value) {
+        setFieldError('issue_date', 'Date d'émission obligatoire');
+        valid = false;
+    }
+
+    // Date échéance
+    const issueDate = document.getElementById('issue_date').value;
+    const dueDate = document.getElementById('due_date').value;
+    if (dueDate && dueDate < issueDate) {
+        setFieldError('due_date', 'Date échéance antérieure à la date d'émission');
+        valid = false;
+    }
+
+    // Vendeur
+    if (!document.getElementById('seller_name').value.trim()) {
+        setFieldError('seller_name', 'Nom vendeur obligatoire');
+        valid = false;
+    }
+    if (!/^\d{14}$/.test(document.getElementById('seller_siret').value)) {
+        setFieldError('seller_siret', 'SIRET invalide : 14 chiffres requis');
+        valid = false;
+    }
+    if (!/^FR\d{11}$/.test(document.getElementById('seller_vat').value)) {
+        setFieldError('seller_vat', 'TVA invalide : format FR + 11 chiffres');
+        valid = false;
+    }
+    if (!document.getElementById('seller_street').value.trim()) {
+        setFieldError('seller_street', 'Adresse obligatoire');
+        valid = false;
+    }
+    if (!document.getElementById('seller_city').value.trim()) {
+        setFieldError('seller_city', 'Ville obligatoire');
+        valid = false;
+    }
+    if (!/^\d{5}$/.test(document.getElementById('seller_postal').value)) {
+        setFieldError('seller_postal', 'Code postal invalide : 5 chiffres requis');
+        valid = false;
+    }
+
+    // Acheteur
+    if (!document.getElementById('buyer_name').value.trim()) {
+        setFieldError('buyer_name', 'Nom acheteur obligatoire');
+        valid = false;
+    }
+    if (!/^\d{14}$/.test(document.getElementById('buyer_siret').value)) {
+        setFieldError('buyer_siret', 'SIRET invalide : 14 chiffres requis');
+        valid = false;
+    }
+    if (!/^FR\d{11}$/.test(document.getElementById('buyer_vat').value)) {
+        setFieldError('buyer_vat', 'TVA invalide : format FR + 11 chiffres');
+        valid = false;
+    }
+    if (!document.getElementById('buyer_street').value.trim()) {
+        setFieldError('buyer_street', 'Adresse obligatoire');
+        valid = false;
+    }
+    if (!document.getElementById('buyer_city').value.trim()) {
+        setFieldError('buyer_city', 'Ville obligatoire');
+        valid = false;
+    }
+    if (!/^\d{5}$/.test(document.getElementById('buyer_postal').value)) {
+        setFieldError('buyer_postal', 'Code postal invalide : 5 chiffres requis');
+        valid = false;
+    }
+
+    // IBAN
+    const iban = document.getElementById('bank_iban').value.replace(/\s/g, '');
+    if (iban && !/^FR\d{25}$/.test(iban)) {
+        setFieldError('bank_iban', 'IBAN invalide : format FR + 25 chiffres');
+        valid = false;
+    }
+
+    // Lignes
+    let hasLines = false;
+    for (let i = 1; i <= lineCount; i++) {
+        const desc = document.getElementById(`desc-${i}`);
+        if (!desc) continue;
+        hasLines = true;
+        if (!desc.value.trim()) {
+            setFieldError(`desc-${i}`, 'Description obligatoire');
+            valid = false;
+        }
+        const qty = parseFloat(document.getElementById(`qty-${i}`).value);
+        if (isNaN(qty) || qty <= 0) {
+            setFieldError(`qty-${i}`, 'Quantité invalide');
+            valid = false;
+        }
+        const price = parseFloat(document.getElementById(`price-${i}`).value);
+        if (isNaN(price) || price < 0) {
+            setFieldError(`price-${i}`, 'Prix invalide');
+            valid = false;
+        }
+    }
+    if (!hasLines) {
+        showAlert('Ajoutez au moins une ligne de facturation', 'error');
+        valid = false;
+    }
+
+    return valid;
+}
+
 function getLines() {
     const lines = [];
     for (let i = 1; i <= lineCount; i++) {
@@ -408,8 +540,8 @@ async function generateInvoice() {
         bank_iban: document.getElementById('bank_iban').value || undefined
     };
 
-    if (!payload.invoice_number || !payload.issue_date || !payload.seller.name || !payload.buyer.name || payload.lines.length === 0) {
-        showAlert("Veuillez remplir tous les champs obligatoires (*)", "error");
+    if (!validateForm()) {
+        showAlert("❌ Veuillez corriger les erreurs avant de continuer", "error");
         return;
     }
 
