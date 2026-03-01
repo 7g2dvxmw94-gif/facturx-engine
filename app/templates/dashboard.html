@@ -61,6 +61,32 @@
                 <p>Avoirs</p>
             </div>
         </div>
+        <div id="stats-section" style="margin-bottom:25px; background:white; border-radius:8px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+            <h3 style="color:#2c3e50; margin-bottom:15px; font-size:16px;">📊 Statistiques</h3>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:20px;">
+                <div style="text-align:center; padding:15px; background:#f8f9fa; border-radius:6px;">
+                    <div style="font-size:28px; font-weight:bold; color:#3498db" id="stat-total">-</div>
+                    <div style="font-size:12px; color:#999">Documents</div>
+                </div>
+                <div style="text-align:center; padding:15px; background:#f8f9fa; border-radius:6px;">
+                    <div style="font-size:28px; font-weight:bold; color:#27ae60" id="stat-factures">-</div>
+                    <div style="font-size:12px; color:#999">Factures</div>
+                </div>
+                <div style="text-align:center; padding:15px; background:#f8f9fa; border-radius:6px;">
+                    <div style="font-size:28px; font-weight:bold; color:#e67e22" id="stat-avoirs">-</div>
+                    <div style="font-size:12px; color:#999">Avoirs</div>
+                </div>
+                <div style="text-align:center; padding:15px; background:#f8f9fa; border-radius:6px;">
+                    <div style="font-size:28px; font-weight:bold; color:#9b59b6" id="stat-storage">-</div>
+                    <div style="font-size:12px; color:#999">Stockage</div>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:13px; color:#666; margin-bottom:10px;">Factures par mois</div>
+                <div id="stat-by-month"></div>
+            </div>
+        </div>
+
         <div style="margin-bottom:15px">
             <input type="text" id="search-input" placeholder="🔍 Rechercher une facture..." 
                 oninput="searchInvoices()"
@@ -84,6 +110,61 @@
 let apiKey = '';
 const BASE_URL = window.location.origin;
 
+async function loadStats() {
+    try {
+        const res = await fetch(BASE_URL + '/v1/stats', { headers: { 'X-API-Key': apiKey } });
+        if (!res.ok) return;
+        const stats = await res.json();
+        document.getElementById('stat-total').textContent = stats.total_documents;
+        document.getElementById('stat-factures').textContent = stats.total_factures;
+        document.getElementById('stat-avoirs').textContent = stats.total_avoirs;
+        document.getElementById('stat-storage').textContent = stats.storage_kb + ' KB';
+
+        const byMonth = stats.by_month || {};
+        const months = Object.keys(byMonth);
+        const max = Math.max(...Object.values(byMonth), 1);
+        const html = months.map(m => {
+            const count = byMonth[m];
+            const pct = Math.round((count / max) * 100);
+            return `<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div style="width:80px; font-size:12px; color:#666">${m}</div>
+                <div style="flex:1; background:#f0f0f0; border-radius:4px; height:20px;">
+                    <div style="width:${pct}%; background:#3498db; height:100%; border-radius:4px;"></div>
+                </div>
+                <div style="width:30px; font-size:12px; color:#333; text-align:right">${count}</div>
+            </div>`;
+        }).join('');
+        document.getElementById('stat-by-month').innerHTML = html || '<p style="color:#999; font-size:13px">Aucune donnée</p>';
+    } catch(e) {}
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch(BASE_URL + '/v1/stats', { headers: { 'X-API-Key': apiKey } });
+        if (!res.ok) return;
+        const stats = await res.json();
+        document.getElementById('stat-total').textContent = stats.total_documents;
+        document.getElementById('stat-factures').textContent = stats.total_factures;
+        document.getElementById('stat-avoirs').textContent = stats.total_avoirs;
+        document.getElementById('stat-storage').textContent = stats.storage_kb + ' KB';
+        const byMonth = stats.by_month || {};
+        const months = Object.keys(byMonth);
+        const max = Math.max(...Object.values(byMonth), 1);
+        const html = months.map(m => {
+            const count = byMonth[m];
+            const pct = Math.round((count / max) * 100);
+            return `<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div style="width:80px; font-size:12px; color:#666">${m}</div>
+                <div style="flex:1; background:#f0f0f0; border-radius:4px; height:20px;">
+                    <div style="width:${pct}%; background:#3498db; height:100%; border-radius:4px;"></div>
+                </div>
+                <div style="width:30px; font-size:12px; color:#333; text-align:right">${count}</div>
+            </div>`;
+        }).join('');
+        document.getElementById('stat-by-month').innerHTML = html || '<p style="color:#999; font-size:13px">Aucune donnée</p>';
+    } catch(e) {}
+}
+
 async function login() {
     apiKey = document.getElementById('api-key-input').value;
     try {
@@ -99,6 +180,7 @@ async function login() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         renderDashboard(data);
+        loadStats();
     } catch(e) {
         document.getElementById('login-error').textContent = 'Erreur de connexion';
     }
@@ -117,6 +199,7 @@ window.addEventListener('load', async () => {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
                 renderDashboard(data);
+                loadStats();
             }
         } catch(e) {}
     }

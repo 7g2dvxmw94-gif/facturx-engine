@@ -213,6 +213,35 @@ async def download_invoice(filename: str, api_key: str = Security(verify_api_key
         raise HTTPException(status_code=500, detail={"error": "Erreur téléchargement", "message": str(e)})
 
 
+@v1.get("/stats")
+async def get_stats(api_key: str = Security(verify_api_key)):
+    """Retourne les statistiques des factures générées."""
+    try:
+        files = list(STORAGE_DIR.glob("*.pdf"))
+        factures = [f for f in files if f.name.startswith(f"{api_key}__facture_") or (not "__" in f.name and f.name.startswith("facture_"))]
+        avoirs = [f for f in files if f.name.startswith(f"{api_key}__avoir_") or (not "__" in f.name and f.name.startswith("avoir_"))]
+
+        total_size = sum(f.stat().st_size for f in files) / 1024
+        
+        # Factures par mois
+        from collections import defaultdict
+        from datetime import datetime
+        by_month = defaultdict(int)
+        for f in factures:
+            month = datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m")
+            by_month[month] += 1
+
+        return {
+            "total_documents": len(files),
+            "total_factures": len(factures),
+            "total_avoirs": len(avoirs),
+            "storage_kb": round(total_size, 1),
+            "by_month": dict(sorted(by_month.items(), reverse=True)[:6])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": "Erreur stats", "message": str(e)})
+
+
 @v1.get("/invoices/{filename}/data")
 async def get_invoice_data(filename: str, api_key: str = Security(verify_api_key)):
     """Extrait les données XML d'une facture stockée."""
